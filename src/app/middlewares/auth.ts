@@ -1,12 +1,12 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response } from "express"
 
-import config from "../../config";
-import { JwtPayload, Secret } from "jsonwebtoken";
+import config from "../../config"
+import { JwtPayload, Secret } from "jsonwebtoken"
 
-import httpStatus from "http-status";
-import ApiError from "../../errors/ApiErrors";
-import { jwtHelpers } from "../../helpars/jwtHelpers";
-import prisma from "../../shared/prisma";
+import httpStatus from "http-status"
+import ApiError from "../../errors/ApiErrors"
+import { jwtHelpers } from "../../helpers/jwtHelpers"
+import prisma from "../../shared/prisma"
 
 const auth = (...roles: string[]) => {
   return async (
@@ -15,41 +15,41 @@ const auth = (...roles: string[]) => {
     next: NextFunction
   ) => {
     try {
-      const token = req.headers.authorization;
+      const token = req.headers.authorization
 
       if (!token) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!")
       }
 
       const verifiedUser = jwtHelpers.verifyToken(
         token,
         config.jwt.jwt_secret as Secret
-      );
-      const { id, role, iat } = verifiedUser;
+      )
+      const { id, role, iat } = verifiedUser
 
       const user = await prisma.user.findUnique({
         where: {
           id: id,
         },
-      });
+      })
       if (!user) {
-        throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found!")
       }
 
       if (user.status === "BLOCKED") {
-        throw new ApiError(httpStatus.FORBIDDEN, "Your account is blocked!");
+        throw new ApiError(httpStatus.FORBIDDEN, "Your account is blocked!")
       }
 
-      req.user = verifiedUser as JwtPayload;
+      req.user = verifiedUser as JwtPayload
 
       if (roles.length && !roles.includes(verifiedUser.role)) {
-        throw new ApiError(httpStatus.FORBIDDEN, "Forbidden!");
+        throw new ApiError(httpStatus.FORBIDDEN, "Forbidden!")
       }
-      next();
+      next()
     } catch (err) {
-      next(err);
+      next(err)
     }
-  };
-};
+  }
+}
 
-export default auth;
+export default auth
