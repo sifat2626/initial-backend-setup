@@ -1,34 +1,34 @@
-import prisma from "../../../shared/prisma";
-import ApiError from "../../../errors/ApiErrors";
-import { IUser, IUserFilterRequest } from "./user.interface";
-import * as bcrypt from "bcrypt";
-import { IPaginationOptions } from "../../../interfaces/paginations";
-import { paginationHelper } from "../../../helpars/paginationHelper";
-import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
-import { userSearchAbleFields } from "./user.costant";
-import config from "../../../config";
-import httpStatus from "http-status";
+import prisma from "../../../shared/prisma"
+import ApiError from "../../../errors/ApiErrors"
+import { IUser, IUserFilterRequest } from "./user.interface"
+import * as bcrypt from "bcrypt"
+import { IPaginationOptions } from "../../../interfaces/paginations"
+import { paginationHelper } from "../../../helpers/paginationHelper"
+import { Prisma, User, UserRole, UserStatus } from "@prisma/client"
+import { userSearchAbleFields } from "./user.costant"
+import config from "../../../config"
+import httpStatus from "http-status"
 
 // Create a new user in the database.
 const createUserIntoDb = async (payload: User) => {
   const existingUser = await prisma.user.findFirst({
     where: {
-       email: payload.email }
-
-  });
+      email: payload.email,
+    },
+  })
 
   if (existingUser) {
     if (existingUser.email === payload.email) {
       throw new ApiError(
         400,
         `User with this email ${payload.email} already exists`
-      );
+      )
     }
   }
   const hashedPassword: string = await bcrypt.hash(
     payload.password,
     Number(config.bcrypt_salt_rounds)
-  );
+  )
 
   const result = await prisma.user.create({
     data: { ...payload, password: hashedPassword },
@@ -40,80 +40,42 @@ const createUserIntoDb = async (payload: User) => {
       createdAt: true,
       updatedAt: true,
     },
-  });
+  })
 
-  return result;
-};
+  return result
+}
 
 // reterive all users from the database also searcing anf filetering
-const getUsersFromDb = async (
-  params: IUserFilterRequest,
-  options: IPaginationOptions
-) => {
-  const { page, limit, skip } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = params;
+const getUsersFromDb = async (query: any) => {
+  const { page = 1, limit = 10 } = query
 
-  const andCondions: Prisma.UserWhereInput[] = [];
+  const skip = (Number(page) - 1) * Number(limit)
+  const take = Number(limit)
 
-  if (params.searchTerm) {
-    andCondions.push({
-      OR: userSearchAbleFields.map((field) => ({
-        [field]: {
-          contains: params.searchTerm,
-          mode: "insensitive",
-        },
-      })),
-    });
-  }
+  const whereConditions: any = {}
 
-  if (Object.keys(filterData).length > 0) {
-    andCondions.push({
-      AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
-      })),
-    });
-  }
-  const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
+  const totalUsers = await prisma.user.count({
+    where: whereConditions,
+  })
 
-  const result = await prisma.user.findMany({
-    where: whereConditons,
-    skip,
-    orderBy:
-      options.sortBy && options.sortOrder
-        ? {
-            [options.sortBy]: options.sortOrder,
-          }
-        : {
-            createdAt: "desc",
-          },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      profileImage: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
+  const users = await prisma.user.findMany({
+    where: whereConditions,
+    skip: skip,
+    take: take,
+    orderBy: {
+      createdAt: "desc",
     },
-  });
-  const total = await prisma.user.count({
-    where: whereConditons,
-  });
+  })
 
-  if (!result || result.length === 0) {
-    throw new ApiError(404, "No active users found");
-  }
   return {
     meta: {
       page,
       limit,
-      total,
+      total: totalUsers,
     },
-    data: result,
-  };
-};
+    data: users,
+  }
+}
 
 // update profile by user won profile uisng token or email and id
 const updateProfile = async (user: IUser, payload: User) => {
@@ -122,10 +84,10 @@ const updateProfile = async (user: IUser, payload: User) => {
       email: user.email,
       id: user.id,
     },
-  });
+  })
 
   if (!userInfo) {
-    throw new ApiError(404, "User not found");
+    throw new ApiError(404, "User not found")
   }
 
   // Update the user profile with the new information
@@ -143,23 +105,22 @@ const updateProfile = async (user: IUser, payload: User) => {
       id: true,
       name: true,
 
-      
       email: true,
       profileImage: true,
       phoneNumber: true,
       createdAt: true,
       updatedAt: true,
     },
-  });
+  })
 
   if (!result)
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       "Failed to update user profile"
-    );
+    )
 
-  return result;
-};
+  return result
+}
 
 // update user data into database by id fir admin
 const updateUserIntoDb = async (payload: IUser, id: string) => {
@@ -167,9 +128,9 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
     where: {
       id: id,
     },
-  });
+  })
   if (!userInfo)
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found with id: " + id);
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found with id: " + id)
 
   const result = await prisma.user.update({
     where: {
@@ -185,20 +146,20 @@ const updateUserIntoDb = async (payload: IUser, id: string) => {
       createdAt: true,
       updatedAt: true,
     },
-  });
+  })
 
   if (!result)
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       "Failed to update user profile"
-    );
+    )
 
-  return result;
-};
+  return result
+}
 
 export const userService = {
   createUserIntoDb,
   getUsersFromDb,
   updateProfile,
   updateUserIntoDb,
-};
+}
