@@ -6,7 +6,7 @@ import { upload } from "../../utils/multer"
 const router = express.Router()
 
 router.post(
-  "/multiple",
+  "/multiple/images",
   upload.array("images", 20),
   UploadControllers.uploadImages
 )
