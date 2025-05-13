@@ -8,7 +8,8 @@
     "build": "tsc",
     "generate": "ts-node src/generate-module.ts",
     "postinstall": "prisma generate",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cModule": "node scripts/generateModule.js"
   },
   "keywords": [],
   "author": "",
