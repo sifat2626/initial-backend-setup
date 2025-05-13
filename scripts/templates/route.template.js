@@ -1,20 +1,15 @@
-module.exports = ({ pascal, camel }) => `import { Router } from "express";
-import { ${pascal}Controller } from "./${camel}.controller";
-import auth from "../../middlewares/auth";
-import { UserRole } from "@prisma/client";
-import { upload } from "../../../helpars/fileUploader";
-import { parseBodyData } from "../../middlewares/parseBodyData";
-import validateRequest from "../../middlewares/validateRequest";
-import { ${pascal}Validations } from "./${camel}.validation";
+module.exports = ({ pascal, camel }) => `import express from 'express';
+import auth from '../../middlewares/auth';
+import { UserRole } from '@prisma/client';
+import { ${pascal}Controllers } from './${camel}.controller';
 
-const router = Router();
+const router = express.Router();
 
-router.route("/").get(${pascal}Controller.get${pascal}s);
+router.post('/', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), ${pascal}Controllers.create${pascal});
+router.get('/', ${pascal}Controllers.getAll${pascal}s);
+router.get('/:id', ${pascal}Controllers.getSingle${pascal});
+router.patch('/:id', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), ${pascal}Controllers.update${pascal});
+router.delete('/:id', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), ${pascal}Controllers.delete${pascal});
 
-router
-	.route("/:id")
-	.get(${pascal}Controller.get${pascal}ById)
-	.put(${pascal}Controller.update${pascal})
-	.delete(${pascal}Controller.delete${pascal});
-
-export const ${pascal}Routes = router;`;
+export const ${pascal}Routes = router;
+`
