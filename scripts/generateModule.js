@@ -23,15 +23,15 @@ if (!fs.existsSync(baseDir)) {
 
 const files = [
   {
-    name: `${pascal}.route.ts`,
+    name: `${camel}.route.ts`,
     content: routeTemplate({ pascal, camel, lower }),
   },
   {
-    name: `${pascal}.controller.ts`,
+    name: `${camel}.controller.ts`,
     content: controllerTemplate({ pascal, camel }),
   },
   {
-    name: `${pascal}.service.ts`,
+    name: `${camel}.service.ts`,
     content: serviceTemplate({ pascal, camel, lower }),
   },
   // { name: `${lower}.constant.ts`, content: constantsTemplate({ pascal, camel, lower }) },
