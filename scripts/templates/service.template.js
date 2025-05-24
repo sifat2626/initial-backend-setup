@@ -3,6 +3,7 @@ module.exports = ({
   camel,
 }) => `import { ${pascal} } from "@prisma/client";
 import prisma from "../../../shared/prisma";
+import ApiError from "../../../errors/ApiErrors"
 
 const create${pascal} = async (payload: ${pascal}) => {
   const ${camel} = await prisma.${camel}.create({
@@ -48,7 +49,7 @@ const getSingle${pascal} = async (id: string) => {
   });
 
   if (!${camel}) {
-    throw new Error("${pascal} not found");
+    throw new ApiError(400, "${pascal} not found");
   }
 
   return ${camel};
@@ -73,7 +74,7 @@ const delete${pascal} = async (id: string) => {
   });
 
   if (!${camel}) {
-    throw new Error("${pascal} not found");
+    throw new ApiError(400, "${pascal} not found");
   }
 
   await prisma.${camel}.delete({
