@@ -46,7 +46,7 @@ model Club {
 
 model Court{
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
+  name        String @unique
   description String?
   image       String?
   clubId      String   @db.ObjectId

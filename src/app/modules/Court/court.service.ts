@@ -19,6 +19,19 @@ const createCourt = async (payload: Court) => {
     throw new ApiError(404, "Club not found")
   }
 
+  if (!club.isSubscribed) {
+    if (club.remainingCourts <= 0) {
+      throw new ApiError(400, "No remaining courts available for this club")
+    } else {
+      await prisma.club.update({
+        where: { id: clubId },
+        data: {
+          remainingCourts: club.remainingCourts - 1,
+        },
+      })
+    }
+  }
+
   const court = await prisma.court.create({
     data: payload,
   })
