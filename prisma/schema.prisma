@@ -14,18 +14,18 @@ model User {
   phoneNumber  String?
   profileImage String?
   password     String
-  role         UserRole   @default(USER)
+  role         UserRole   @default(CLUB_OWNER)
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   @@map("Users")
-  Club Club[]
+  Club Club?
 }
 
 model Club {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  ownerId    String   @db.ObjectId
+  ownerId    String   @db.ObjectId @unique
   name        String
   description String?
   image       String?
@@ -39,7 +39,7 @@ model Club {
 
   @@map("Clubs")
   Court Court[]
-  Member Member[]
+  Member Member?
   Match Match[]
   Session Session[]
 }
@@ -65,7 +65,7 @@ model Member{
   name        String
   gender     Gender @default(MALE)
   level       Level @default(CASUAL)
-  clubId      String?   @db.ObjectId
+  clubId      String?   @db.ObjectId @unique
   isMember   Boolean @default(true)
   joinedAt    DateTime @default(now())
   status      UserStatus @default(ACTIVE)
@@ -174,9 +174,8 @@ enum MatchType {
 
 enum UserRole {
   ADMIN
-  TEACHER
   SUPER_ADMIN
-  USER
+  CLUB_OWNER
 }
 
 enum UserStatus {
