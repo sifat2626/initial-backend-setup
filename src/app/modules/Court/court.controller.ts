@@ -1,8 +1,23 @@
+import ApiError from "../../../errors/ApiErrors"
 import catchAsync from "../../../shared/catchAsync"
+import prisma from "../../../shared/prisma"
 import sendResponse from "../../../shared/sendResponse"
 import { CourtServices } from "./court.service"
 
 const createCourt = catchAsync(async (req, res) => {
+  const ownerId = req.user.id
+
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(400, "Club not found for the owner")
+  }
+
+  req.body.clubId = club.id
   const court = await CourtServices.createCourt(req.body)
 
   sendResponse(res, {

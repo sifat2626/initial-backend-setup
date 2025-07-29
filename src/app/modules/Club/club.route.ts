@@ -6,8 +6,16 @@ import { ClubControllers } from "./club.controller"
 const router = express.Router()
 
 router.post("/", auth(UserRole.CLUB_OWNER), ClubControllers.createClub)
-router.get("/", ClubControllers.getAllClubs)
-router.get("/:id", ClubControllers.getSingleClub)
+router.get(
+  "/",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  ClubControllers.getAllClubs
+)
+router.get(
+  "/:id",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  ClubControllers.getSingleClub
+)
 router.patch("/:id", auth(UserRole.CLUB_OWNER), ClubControllers.updateClub)
 router.delete("/:id", auth(UserRole.CLUB_OWNER), ClubControllers.deleteClub)
 

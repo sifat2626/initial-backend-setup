@@ -3,7 +3,7 @@ import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
 const createCourt = async (payload: Court) => {
-  const { clubId } = payload
+  const { clubId, name } = payload
 
   if (!clubId) {
     throw new ApiError(400, "Club ID is required to create a court")
@@ -17,6 +17,16 @@ const createCourt = async (payload: Court) => {
 
   if (!club) {
     throw new ApiError(404, "Club not found")
+  }
+
+  const existingCourt = await prisma.court.findUnique({
+    where: {
+      name,
+    },
+  })
+
+  if (existingCourt) {
+    throw new ApiError(400, "Court with this name already exists")
   }
 
   if (!club.isSubscribed) {
