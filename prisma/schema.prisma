@@ -31,7 +31,7 @@ model Club {
   image       String?
   remainingCourts Int @default(3)
   remainingMembers Int @default(20)
-  isPaid      Boolean @default(false)
+  isSubscribed      Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -165,6 +165,15 @@ model SessionCourt{
   court       Court    @relation(fields: [courtId], references: [id])
 
   @@map("SessionCourts")
+}
+
+model Subscription {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  clubId      String   @db.ObjectId
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("Subscriptions")
 }
 
 enum MatchType {
