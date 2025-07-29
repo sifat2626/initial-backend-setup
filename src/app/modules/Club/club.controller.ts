@@ -3,7 +3,8 @@ import sendResponse from "../../../shared/sendResponse"
 import { ClubServices } from "./club.service"
 
 const createClub = catchAsync(async (req, res) => {
-  const club = await ClubServices.createClub(req.body)
+  const ownerId = req.user.id
+  const club = await ClubServices.createClub({ ...req.body, ownerId })
 
   sendResponse(res, {
     statusCode: 200,
