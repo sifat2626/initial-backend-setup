@@ -84,6 +84,20 @@ const getSingleClub = async (id: string) => {
 }
 
 const updateClub = async (id: string, payload: Partial<Club>) => {
+  const { ownerId } = payload
+
+  if (ownerId) {
+    const existingClub = await prisma.club.findUnique({
+      where: {
+        ownerId,
+      },
+    })
+
+    if (existingClub && existingClub.id !== id) {
+      throw new ApiError(400, "Club already exists for this owner")
+    }
+  }
+
   const club = await prisma.club.update({
     where: {
       id,
