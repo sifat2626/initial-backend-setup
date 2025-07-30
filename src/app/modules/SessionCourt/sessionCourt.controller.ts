@@ -1,9 +1,26 @@
+import ApiError from "../../../errors/ApiErrors"
 import catchAsync from "../../../shared/catchAsync"
+import prisma from "../../../shared/prisma"
 import sendResponse from "../../../shared/sendResponse"
 import { SessionCourtServices } from "./sessionCourt.service"
 
 const createSessionCourt = catchAsync(async (req, res) => {
-  const sessionCourt = await SessionCourtServices.createSessionCourt(req.body)
+  const ownerId = req.user.id
+
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(404, "Club not found for the owner")
+  }
+
+  const sessionCourt = await SessionCourtServices.createSessionCourt(
+    req.body,
+    club.id
+  )
 
   sendResponse(res, {
     statusCode: 200,
@@ -13,7 +30,9 @@ const createSessionCourt = catchAsync(async (req, res) => {
 })
 
 const getAllSessionCourts = catchAsync(async (req, res) => {
-  const sessionCourts = await SessionCourtServices.getAllSessionCourts(req.query)
+  const sessionCourts = await SessionCourtServices.getAllSessionCourts(
+    req.query
+  )
 
   sendResponse(res, {
     statusCode: 200,
@@ -23,7 +42,9 @@ const getAllSessionCourts = catchAsync(async (req, res) => {
 })
 
 const getSingleSessionCourt = catchAsync(async (req, res) => {
-  const sessionCourt = await SessionCourtServices.getSingleSessionCourt(req.params.id)
+  const sessionCourt = await SessionCourtServices.getSingleSessionCourt(
+    req.params.id
+  )
 
   sendResponse(res, {
     statusCode: 200,
@@ -33,7 +54,10 @@ const getSingleSessionCourt = catchAsync(async (req, res) => {
 })
 
 const updateSessionCourt = catchAsync(async (req, res) => {
-  const sessionCourt = await SessionCourtServices.updateSessionCourt(req.params.id, req.body)
+  const sessionCourt = await SessionCourtServices.updateSessionCourt(
+    req.params.id,
+    req.body
+  )
 
   sendResponse(res, {
     statusCode: 200,
@@ -43,7 +67,9 @@ const updateSessionCourt = catchAsync(async (req, res) => {
 })
 
 const deleteSessionCourt = catchAsync(async (req, res) => {
-  const sessionCourt = await SessionCourtServices.deleteSessionCourt(req.params.id)
+  const sessionCourt = await SessionCourtServices.deleteSessionCourt(
+    req.params.id
+  )
 
   sendResponse(res, {
     statusCode: 200,

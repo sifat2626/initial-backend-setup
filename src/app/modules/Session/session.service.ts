@@ -78,6 +78,43 @@ const getAllSessions = async (query: any) => {
   }
 }
 
+const getMyClubSessions = async (query: any) => {
+  const { page = 1, limit = 10, clubId } = query
+
+  const skip = (Number(page) - 1) * Number(limit)
+  const take = Number(limit)
+
+  const whereConditions: any = {
+    clubId,
+  }
+
+  const totalCount = await prisma.session.count({
+    where: whereConditions,
+  })
+
+  const sessions = await prisma.session.findMany({
+    where: whereConditions,
+    skip,
+    take,
+    include: {
+      club: true,
+      Match: true,
+      SessionCourt: true,
+      SessionParticipant: true,
+    },
+  })
+
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalCount,
+      totalPages: Math.ceil(totalCount / Number(limit)),
+    },
+    data: sessions,
+  }
+}
+
 const getSingleSession = async (id: string) => {
   const session = await prisma.session.findUnique({
     where: {
@@ -135,6 +172,7 @@ const deleteSession = async (id: string) => {
 export const SessionServices = {
   createSession,
   getAllSessions,
+  getMyClubSessions,
   getSingleSession,
   updateSession,
   deleteSession,

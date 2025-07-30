@@ -39,6 +39,26 @@ const getAllSessions = catchAsync(async (req, res) => {
   })
 })
 
+const getMyClubSessions = catchAsync(async (req, res) => {
+  const ownerId = req.user.id
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(404, "Club not found for the owner")
+  }
+
+  const sessions = await SessionServices.getMyClubSessions({ clubId: club.id })
+  sendResponse(res, {
+    statusCode: 200,
+    message: "My Club Sessions retrieved successfully",
+    data: sessions,
+  })
+})
+
 const getSingleSession = catchAsync(async (req, res) => {
   const session = await SessionServices.getSingleSession(req.params.id)
 
@@ -72,6 +92,7 @@ const deleteSession = catchAsync(async (req, res) => {
 export const SessionControllers = {
   createSession,
   getAllSessions,
+  getMyClubSessions,
   getSingleSession,
   updateSession,
   deleteSession,
