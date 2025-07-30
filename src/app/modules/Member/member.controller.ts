@@ -35,6 +35,24 @@ const getAllMembers = catchAsync(async (req, res) => {
   })
 })
 
+const getMyClubMembers = catchAsync(async (req, res) => {
+  const ownerId = req.user.id
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+  if (!club) {
+    throw new ApiError(404, "Club not found for the owner")
+  }
+  const members = await MemberServices.getMyClubMembers({ clubId: club.id })
+  sendResponse(res, {
+    statusCode: 200,
+    message: "My Club Members retrieved successfully",
+    data: members,
+  })
+})
+
 const getSingleMember = catchAsync(async (req, res) => {
   const member = await MemberServices.getSingleMember(req.params.id)
 
@@ -68,6 +86,7 @@ const deleteMember = catchAsync(async (req, res) => {
 export const MemberControllers = {
   createMember,
   getAllMembers,
+  getMyClubMembers,
   getSingleMember,
   updateMember,
   deleteMember,

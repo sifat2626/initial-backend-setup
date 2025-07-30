@@ -174,6 +174,7 @@ const deleteMember = async (id: string) => {
 export const MemberServices = {
   createMember,
   getAllMembers,
+  getMyClubMembers,
   getSingleMember,
   updateMember,
   deleteMember,

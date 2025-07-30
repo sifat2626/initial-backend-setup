@@ -11,6 +11,11 @@ router.get(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   MemberControllers.getAllMembers
 )
+router.get(
+  "/my-club",
+  auth(UserRole.CLUB_OWNER),
+  MemberControllers.getMyClubMembers
+)
 router.get("/:id", auth(), MemberControllers.getSingleMember)
 router.patch("/:id", auth(UserRole.CLUB_OWNER), MemberControllers.updateMember)
 router.delete("/:id", auth(UserRole.CLUB_OWNER), MemberControllers.deleteMember)
