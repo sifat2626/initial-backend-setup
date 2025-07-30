@@ -3,7 +3,7 @@ import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
 const createMember = async (payload: Member) => {
-  const { clubId, name } = payload
+  let { clubId, isMember } = payload
 
   if (clubId) {
     const club = await prisma.club.findUnique({
@@ -19,6 +19,8 @@ const createMember = async (payload: Member) => {
     if (!club.isSubscribed && club.remainingMembers <= 0) {
       throw new ApiError(400, "No remaining members available for this club")
     }
+
+    isMember = false
     await prisma.club.update({
       where: { id: clubId },
       data: {
