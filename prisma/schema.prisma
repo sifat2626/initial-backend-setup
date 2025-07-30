@@ -109,7 +109,7 @@ model Match{
 
 model Session {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  clubId      String?   @db.ObjectId
+  clubId      String   @db.ObjectId
   createdAt   DateTime @default(now())
   startTime   DateTime
   endTime     DateTime
