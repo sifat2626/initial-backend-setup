@@ -5,11 +5,11 @@ import { ${pascal}Controllers } from './${camel}.controller';
 
 const router = express.Router();
 
-router.post('/', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), ${pascal}Controllers.create${pascal});
+router.post('/', auth(UserRole.CLUB_OWNER), ${pascal}Controllers.create${pascal});
 router.get('/', ${pascal}Controllers.getAll${pascal}s);
 router.get('/:id', ${pascal}Controllers.getSingle${pascal});
-router.patch('/:id', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), ${pascal}Controllers.update${pascal});
-router.delete('/:id', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), ${pascal}Controllers.delete${pascal});
+router.patch('/:id', auth(UserRole.CLUB_OWNER), ${pascal}Controllers.update${pascal});
+router.delete('/:id', auth(UserRole.CLUB_OWNER), ${pascal}Controllers.delete${pascal});
 
 export const ${pascal}Routes = router;
 `

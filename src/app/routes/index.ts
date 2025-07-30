@@ -4,6 +4,8 @@ import { AuthRoutes } from "../modules/Auth/auth.routes"
 import { ClubRoutes } from "../modules/Club/club.route"
 import { CourtRoutes } from "../modules/Court/court.route"
 import { MemberRoutes } from "../modules/Member/member.route"
+import { Session } from "inspector"
+import { SessionRoutes } from "../modules/Session/session.route"
 
 const router = express.Router()
 
@@ -27,6 +29,10 @@ const moduleRoutes = [
   {
     path: "/members",
     route: MemberRoutes,
+  },
+  {
+    path: "/sessions",
+    route: SessionRoutes,
   },
 ]
 
