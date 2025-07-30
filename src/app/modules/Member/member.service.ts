@@ -54,6 +54,9 @@ const getAllMembers = async (query: any) => {
     where: whereConditions,
     skip,
     take,
+    include: {
+      club: true,
+    },
   })
 
   return {
@@ -71,6 +74,9 @@ const getSingleMember = async (id: string) => {
   const member = await prisma.member.findUnique({
     where: {
       id,
+    },
+    include: {
+      club: true,
     },
   })
 

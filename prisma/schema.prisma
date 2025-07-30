@@ -68,7 +68,6 @@ model Member{
   clubId      String?   @db.ObjectId @unique
   isMember   Boolean @default(false)
   joinedAt    DateTime @default(now())
-  status      UserStatus @default(ACTIVE)
 
   club        Club?     @relation(fields: [clubId], references: [id])
 
