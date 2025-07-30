@@ -1,9 +1,26 @@
+import ApiError from "../../../errors/ApiErrors"
 import catchAsync from "../../../shared/catchAsync"
+import prisma from "../../../shared/prisma"
 import sendResponse from "../../../shared/sendResponse"
 import { SessionServices } from "./session.service"
 
 const createSession = catchAsync(async (req, res) => {
-  const session = await SessionServices.createSession(req.body)
+  const ownerId = req.user.id
+
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(404, "Club not found")
+  }
+
+  const session = await SessionServices.createSession({
+    ...req.body,
+    clubId: club.id,
+  })
 
   sendResponse(res, {
     statusCode: 200,

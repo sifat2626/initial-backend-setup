@@ -3,20 +3,34 @@ import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
 const createSession = async (payload: Session) => {
-  const { clubId } = payload
+  const { startTime, endTime } = payload
 
-  if (!clubId) {
-    throw new ApiError(400, "Club ID is required to create a session")
+  if (!startTime || !endTime) {
+    throw new ApiError(
+      400,
+      "Start time and end time are required to create a session"
+    )
   }
 
-  const club = await prisma.club.findUnique({
+  if (new Date(startTime) >= new Date(endTime)) {
+    throw new ApiError(400, "End time must be after start time")
+  }
+
+  if (new Date(startTime) < new Date()) {
+    throw new ApiError(400, "Start time must be in the future")
+  }
+  const existingSession = await prisma.session.findFirst({
     where: {
-      id: clubId,
+      startTime: {
+        lte: new Date(endTime),
+      },
+      endTime: {
+        gte: new Date(startTime),
+      },
     },
   })
-
-  if (!club) {
-    throw new ApiError(404, "Club not found")
+  if (existingSession) {
+    throw new ApiError(400, "Session overlaps with an existing session")
   }
 
   const session = await prisma.session.create({
