@@ -120,9 +120,12 @@ const deleteSession = async (id: string) => {
     throw new ApiError(400, "Session not found")
   }
 
-  await prisma.session.delete({
+  await prisma.session.update({
     where: {
       id,
+    },
+    data: {
+      isActive: false,
     },
   })
 

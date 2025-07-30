@@ -5,32 +5,37 @@ import ApiError from "../../../errors/ApiErrors"
 const createMember = async (payload: Member) => {
   let { clubId, isMember } = payload
 
-  if (clubId) {
-    const club = await prisma.club.findUnique({
-      where: {
-        id: clubId,
-      },
+  const member = await prisma.$transaction(async (prisma) => {
+    if (clubId) {
+      const club = await prisma.club.findUnique({
+        where: {
+          id: clubId,
+        },
+      })
+
+      if (!club) {
+        throw new ApiError(404, "Club not found")
+      }
+
+      if (!club.isSubscribed && club.remainingMembers <= 0) {
+        throw new ApiError(400, "No remaining members available for this club")
+      }
+
+      isMember = false
+      await prisma.club.update({
+        where: { id: clubId },
+        data: {
+          remainingMembers: club.remainingMembers - 1,
+        },
+      })
+    }
+    const member = await prisma.member.create({
+      data: payload,
     })
 
-    if (!club) {
-      throw new ApiError(404, "Club not found")
-    }
-
-    if (!club.isSubscribed && club.remainingMembers <= 0) {
-      throw new ApiError(400, "No remaining members available for this club")
-    }
-
-    isMember = false
-    await prisma.club.update({
-      where: { id: clubId },
-      data: {
-        remainingMembers: club.remainingMembers - 1,
-      },
-    })
-  }
-  const member = await prisma.member.create({
-    data: payload,
+    return member
   })
+
   return member
 }
 

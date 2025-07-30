@@ -110,9 +110,11 @@ model Match{
 model Session {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   clubId      String   @db.ObjectId
+  remainingParticipants Int @default(20)
   createdAt   DateTime @default(now())
   startTime   DateTime
   endTime     DateTime
+  isActive    Boolean @default(true)
   updatedAt   DateTime @updatedAt
 
   club        Club     @relation(fields: [clubId], references: [id])

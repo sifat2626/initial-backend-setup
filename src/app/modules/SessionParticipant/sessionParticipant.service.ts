@@ -28,6 +28,22 @@ const createSessionParticipant = async (payload: SessionParticipant) => {
   if (!session) {
     throw new ApiError(400, "Session not found")
   }
+
+  if (session.remainingParticipants <= 0) {
+    throw new ApiError(
+      400,
+      "No remaining participants available for this session"
+    )
+  }
+
+  if (session.isActive === false) {
+    throw new ApiError(400, "Session is not active")
+  }
+
+  if (session.endTime < new Date()) {
+    throw new ApiError(400, "Session has already ended")
+  }
+
   const member = await prisma.member.findUnique({
     where: {
       id: memberId,
@@ -46,9 +62,27 @@ const createSessionParticipant = async (payload: SessionParticipant) => {
     },
   })
 
-  const sessionParticipant = await prisma.sessionParticipant.create({
-    data: payload,
+  if (existingParticipant) {
+    throw new ApiError(400, "Member is already a participant in this session")
+  }
+
+  const sessionParticipant = await prisma.$transaction(async (prisma) => {
+    await prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        remainingParticipants: {
+          decrement: 1,
+        },
+      },
+    })
+
+    return await prisma.sessionParticipant.create({
+      data: payload,
+    })
   })
+
   return sessionParticipant
 }
 
