@@ -192,6 +192,25 @@ const deleteSessionParticipant = async (id: string) => {
     throw new ApiError(400, "SessionParticipant not found")
   }
 
+  const existingMatch = await prisma.match.findFirst({
+    where: {
+      sessionId: sessionParticipant.sessionId,
+    },
+  })
+
+  if (existingMatch) {
+    const participant = await prisma.participant.findFirst({
+      where: {
+        matchId: sessionParticipant.sessionId,
+        memberId: sessionParticipant.memberId,
+      },
+    })
+
+    if (participant) {
+      throw new ApiError(400, "Cannot delete participant, match already exists")
+    }
+  }
+
   await prisma.sessionParticipant.delete({
     where: {
       id,
