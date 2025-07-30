@@ -3,7 +3,8 @@ import sendResponse from "../../../shared/sendResponse"
 import { SessionParticipantServices } from "./sessionParticipant.service"
 
 const createSessionParticipant = catchAsync(async (req, res) => {
-  const sessionParticipant = await SessionParticipantServices.createSessionParticipant(req.body)
+  const sessionParticipant =
+    await SessionParticipantServices.createSessionParticipant(req.body)
 
   sendResponse(res, {
     statusCode: 200,
@@ -13,7 +14,12 @@ const createSessionParticipant = catchAsync(async (req, res) => {
 })
 
 const getAllSessionParticipants = catchAsync(async (req, res) => {
-  const sessionParticipants = await SessionParticipantServices.getAllSessionParticipants(req.query)
+  const { sessionId } = req.params
+  const sessionParticipants =
+    await SessionParticipantServices.getAllSessionParticipants({
+      ...req.query,
+      sessionId,
+    })
 
   sendResponse(res, {
     statusCode: 200,
@@ -23,7 +29,8 @@ const getAllSessionParticipants = catchAsync(async (req, res) => {
 })
 
 const getSingleSessionParticipant = catchAsync(async (req, res) => {
-  const sessionParticipant = await SessionParticipantServices.getSingleSessionParticipant(req.params.id)
+  const sessionParticipant =
+    await SessionParticipantServices.getSingleSessionParticipant(req.params.id)
 
   sendResponse(res, {
     statusCode: 200,
@@ -33,7 +40,11 @@ const getSingleSessionParticipant = catchAsync(async (req, res) => {
 })
 
 const updateSessionParticipant = catchAsync(async (req, res) => {
-  const sessionParticipant = await SessionParticipantServices.updateSessionParticipant(req.params.id, req.body)
+  const sessionParticipant =
+    await SessionParticipantServices.updateSessionParticipant(
+      req.params.id,
+      req.body
+    )
 
   sendResponse(res, {
     statusCode: 200,
@@ -43,7 +54,8 @@ const updateSessionParticipant = catchAsync(async (req, res) => {
 })
 
 const deleteSessionParticipant = catchAsync(async (req, res) => {
-  const sessionParticipant = await SessionParticipantServices.deleteSessionParticipant(req.params.id)
+  const sessionParticipant =
+    await SessionParticipantServices.deleteSessionParticipant(req.params.id)
 
   sendResponse(res, {
     statusCode: 200,

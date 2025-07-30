@@ -105,16 +105,6 @@ const updateMember = async (id: string, payload: Partial<Member>) => {
     if (!club) {
       throw new ApiError(404, "Club not found")
     }
-
-    if (!club.isSubscribed && club.remainingMembers <= 0) {
-      throw new ApiError(400, "No remaining members available for this club")
-    }
-    await prisma.club.update({
-      where: { id: clubId },
-      data: {
-        remainingMembers: club.remainingMembers - 1,
-      },
-    })
   }
 
   const member = await prisma.member.update({
