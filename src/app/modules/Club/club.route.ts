@@ -11,6 +11,9 @@ router.get(
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   ClubControllers.getAllClubs
 )
+
+router.get("/my-club", auth(UserRole.CLUB_OWNER), ClubControllers.getMyClub)
+
 router.get(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),

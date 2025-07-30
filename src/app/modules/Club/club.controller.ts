@@ -33,6 +33,17 @@ const getSingleClub = catchAsync(async (req, res) => {
   })
 })
 
+const getMyClub = catchAsync(async (req, res) => {
+  const ownerId = req.user.id
+  const club = await ClubServices.getMyClub(ownerId)
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Club retrieved successfully",
+    data: club,
+  })
+})
+
 const updateClub = catchAsync(async (req, res) => {
   const club = await ClubServices.updateClub(req.params.id, req.body)
 
@@ -59,4 +70,5 @@ export const ClubControllers = {
   getSingleClub,
   updateClub,
   deleteClub,
+  getMyClub,
 }

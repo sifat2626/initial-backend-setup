@@ -14,12 +14,8 @@ const createSessionParticipant = catchAsync(async (req, res) => {
 })
 
 const getAllSessionParticipants = catchAsync(async (req, res) => {
-  const { sessionId } = req.params
   const sessionParticipants =
-    await SessionParticipantServices.getAllSessionParticipants({
-      ...req.query,
-      sessionId,
-    })
+    await SessionParticipantServices.getAllSessionParticipants(req.query)
 
   sendResponse(res, {
     statusCode: 200,
@@ -56,7 +52,6 @@ const updateSessionParticipant = catchAsync(async (req, res) => {
 const deleteSessionParticipant = catchAsync(async (req, res) => {
   const sessionParticipant =
     await SessionParticipantServices.deleteSessionParticipant(req.params.id)
-
   sendResponse(res, {
     statusCode: 200,
     message: "SessionParticipant deleted successfully",

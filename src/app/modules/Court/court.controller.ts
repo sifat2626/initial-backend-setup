@@ -37,6 +37,27 @@ const getAllCourts = catchAsync(async (req, res) => {
   })
 })
 
+const getMyClubCourts = catchAsync(async (req, res) => {
+  const ownerId = req.user.id
+
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(404, "Club not found for the owner")
+  }
+  const courts = await CourtServices.getMyClubCourts({ clubId: club.id })
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "My Club Courts retrieved successfully",
+    data: courts,
+  })
+})
+
 const getSingleCourt = catchAsync(async (req, res) => {
   const court = await CourtServices.getSingleCourt(req.params.id)
 
@@ -70,6 +91,7 @@ const deleteCourt = catchAsync(async (req, res) => {
 export const CourtControllers = {
   createCourt,
   getAllCourts,
+  getMyClubCourts,
   getSingleCourt,
   updateCourt,
   deleteCourt,

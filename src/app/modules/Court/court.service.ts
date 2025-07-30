@@ -86,6 +86,42 @@ const getAllCourts = async (query: any) => {
   }
 }
 
+const getMyClubCourts = async (query: any) => {
+  const { page = 1, limit = 10, clubId } = query
+
+  const skip = (Number(page) - 1) * Number(limit)
+  const take = Number(limit)
+
+  const whereConditions: any = {
+    clubId,
+  }
+
+  const totalCount = await prisma.court.count({
+    where: whereConditions,
+  })
+
+  const courts = await prisma.court.findMany({
+    where: whereConditions,
+    skip,
+    take,
+    include: {
+      club: true,
+      Match: true,
+      SessionCourt: true,
+    },
+  })
+
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalCount,
+      totalPages: Math.ceil(totalCount / Number(limit)),
+    },
+    data: courts,
+  }
+}
+
 const getSingleCourt = async (id: string) => {
   const court = await prisma.court.findUnique({
     where: {
@@ -153,6 +189,7 @@ const deleteCourt = async (id: string) => {
 export const CourtServices = {
   createCourt,
   getAllCourts,
+  getMyClubCourts,
   getSingleCourt,
   updateCourt,
   deleteCourt,

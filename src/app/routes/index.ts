@@ -7,6 +7,7 @@ import { MemberRoutes } from "../modules/Member/member.route"
 import { Session } from "inspector"
 import { SessionRoutes } from "../modules/Session/session.route"
 import { SessionParticipantRoutes } from "../modules/SessionParticipant/sessionParticipant.route"
+import { SessionCourtRoutes } from "../modules/SessionCourt/sessionCourt.route"
 
 const router = express.Router()
 
@@ -38,6 +39,10 @@ const moduleRoutes = [
   {
     path: "/session-participants",
     route: SessionParticipantRoutes,
+  },
+  {
+    path: "/session-courts",
+    route: SessionCourtRoutes,
   },
 ]
 

@@ -6,7 +6,11 @@ import { MemberControllers } from "./member.controller"
 const router = express.Router()
 
 router.post("/", auth(UserRole.CLUB_OWNER), MemberControllers.createMember)
-router.get("/", auth(), MemberControllers.getAllMembers)
+router.get(
+  "/",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  MemberControllers.getAllMembers
+)
 router.get("/:id", auth(), MemberControllers.getSingleMember)
 router.patch("/:id", auth(UserRole.CLUB_OWNER), MemberControllers.updateMember)
 router.delete("/:id", auth(UserRole.CLUB_OWNER), MemberControllers.deleteMember)

@@ -83,6 +83,25 @@ const getSingleClub = async (id: string) => {
   return club
 }
 
+const getMyClub = async (ownerId: string) => {
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+    include: {
+      owner: true,
+      Member: true,
+      Court: true,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(400, "Club not found")
+  }
+
+  return club
+}
+
 const updateClub = async (id: string, payload: Partial<Club>) => {
   const { ownerId } = payload
 
@@ -141,4 +160,5 @@ export const ClubServices = {
   getSingleClub,
   updateClub,
   deleteClub,
+  getMyClub,
 }

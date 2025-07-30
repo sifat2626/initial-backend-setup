@@ -75,6 +75,40 @@ const getAllMembers = async (query: any) => {
   }
 }
 
+const getMyClubMembers = async (query: any) => {
+  const { page = 1, limit = 10, clubId } = query
+
+  const skip = (Number(page) - 1) * Number(limit)
+  const take = Number(limit)
+
+  const whereConditions: any = {
+    clubId,
+  }
+
+  const totalCount = await prisma.member.count({
+    where: whereConditions,
+  })
+
+  const members = await prisma.member.findMany({
+    where: whereConditions,
+    skip,
+    take,
+    include: {
+      club: true,
+    },
+  })
+
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalCount,
+      totalPages: Math.ceil(totalCount / Number(limit)),
+    },
+    data: members,
+  }
+}
+
 const getSingleMember = async (id: string) => {
   const member = await prisma.member.findUnique({
     where: {

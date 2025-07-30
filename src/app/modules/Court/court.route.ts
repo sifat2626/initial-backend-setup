@@ -12,6 +12,11 @@ router.get(
   CourtControllers.getAllCourts
 )
 router.get(
+  "/my-club",
+  auth(UserRole.CLUB_OWNER),
+  CourtControllers.getMyClubCourts
+)
+router.get(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   CourtControllers.getSingleCourt

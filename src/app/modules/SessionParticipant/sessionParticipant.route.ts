@@ -10,10 +10,7 @@ router.post(
   auth(UserRole.CLUB_OWNER),
   SessionParticipantControllers.createSessionParticipant
 )
-router.get(
-  "/:sessionId/participants",
-  SessionParticipantControllers.getAllSessionParticipants
-)
+router.get("/", SessionParticipantControllers.getAllSessionParticipants)
 router.get("/:id", SessionParticipantControllers.getSingleSessionParticipant)
 router.patch(
   "/:id",
