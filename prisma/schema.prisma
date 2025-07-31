@@ -97,6 +97,8 @@ model Match{
   startTime   DateTime
   endTime     DateTime
   matchType        MatchType @default(QUICK)
+  type       type @default(DOUBLES)
+  isActive    Boolean @default(true)
   sessionId   String?   @db.ObjectId
   updatedAt   DateTime @updatedAt
 
@@ -115,6 +117,7 @@ model Session {
   createdAt   DateTime @default(now())
   startTime   DateTime
   endTime     DateTime
+  type        type @default(DOUBLES)
   isActive    Boolean @default(true)
   updatedAt   DateTime @updatedAt
 
@@ -129,7 +132,7 @@ model Session {
 
 enum type {
   SINGLE
-  DOUBLE
+  DOUBLES
 }
 
 model MatchParticipant{
