@@ -153,10 +153,25 @@ const deleteSessionCourt = async (id: string) => {
   return sessionCourt
 }
 
+const getAvaiableCourtsForSession = (sessionId: string) => {
+  const sessionCourts = prisma.sessionCourt.findMany({
+    where: {
+      sessionId,
+      isBooked: false,
+    },
+    include: {
+      court: true,
+    },
+  })
+
+  return sessionCourts
+}
+
 export const SessionCourtServices = {
   createSessionCourt,
   getAllSessionCourts,
   getSingleSessionCourt,
+  getAvaiableCourtsForSession,
   updateSessionCourt,
   deleteSessionCourt,
 }

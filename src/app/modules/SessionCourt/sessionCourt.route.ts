@@ -12,8 +12,14 @@ router.post(
 )
 router.get(
   "/",
-  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  auth(UserRole.CLUB_OWNER),
   SessionCourtControllers.getAllSessionCourts
+)
+
+router.get(
+  "/available/:sessionId",
+  auth(UserRole.CLUB_OWNER),
+  SessionCourtControllers.getAvaiableCourtsForSession
 )
 router.get("/:id", SessionCourtControllers.getSingleSessionCourt)
 router.patch(

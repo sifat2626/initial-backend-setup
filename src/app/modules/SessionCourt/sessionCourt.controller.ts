@@ -78,10 +78,23 @@ const deleteSessionCourt = catchAsync(async (req, res) => {
   })
 })
 
+const getAvaiableCourtsForSession = catchAsync(async (req, res) => {
+  const sessionCourts = await SessionCourtServices.getAvaiableCourtsForSession(
+    req.params.sessionId
+  )
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Available courts for session retrieved successfully",
+    data: sessionCourts,
+  })
+})
+
 export const SessionCourtControllers = {
   createSessionCourt,
   getAllSessionCourts,
   getSingleSessionCourt,
   updateSessionCourt,
   deleteSessionCourt,
+  getAvaiableCourtsForSession,
 }

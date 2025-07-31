@@ -72,7 +72,7 @@ model Member{
   club        Club?     @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@map("Members")
-  Participant Participant[]
+  Participant MatchParticipant[]
   SessionParticipant SessionParticipant[]
   sessionQueue sessionQueue[]
 }
@@ -105,7 +105,7 @@ model Match{
   session     Session?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("QuickMatches")
-  Participant Participant[]
+  Participant MatchParticipant[]
 }
 
 model Session {
@@ -132,7 +132,7 @@ enum type {
   DOUBLE
 }
 
-model Participant{
+model MatchParticipant{
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   memberId    String   @db.ObjectId
   matchId     String   @db.ObjectId
