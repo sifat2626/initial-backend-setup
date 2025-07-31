@@ -12,7 +12,7 @@ router.get(
   auth(UserRole.CLUB_OWNER),
   SessionControllers.getMyClubSessions
 )
-router.get("/:id", SessionControllers.getSingleSession)
+router.get("/:id", auth(), SessionControllers.getSingleSession)
 router.patch(
   "/:id",
   auth(UserRole.CLUB_OWNER),

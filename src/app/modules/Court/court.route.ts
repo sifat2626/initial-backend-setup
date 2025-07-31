@@ -16,11 +16,7 @@ router.get(
   auth(UserRole.CLUB_OWNER),
   CourtControllers.getMyClubCourts
 )
-router.get(
-  "/:id",
-  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  CourtControllers.getSingleCourt
-)
+router.get("/:id", auth(), CourtControllers.getSingleCourt)
 router.patch("/:id", auth(UserRole.CLUB_OWNER), CourtControllers.updateCourt)
 router.delete("/:id", auth(UserRole.CLUB_OWNER), CourtControllers.deleteCourt)
 

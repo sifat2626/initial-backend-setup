@@ -35,7 +35,7 @@ model Club {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  owner       User     @relation(fields: [ownerId], references: [id])
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("Clubs")
   Court Court[]
@@ -53,7 +53,7 @@ model Court{
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  club        Club     @relation(fields: [clubId], references: [id])
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@map("Courts")
   Match Match[]
@@ -69,11 +69,12 @@ model Member{
   isMember   Boolean @default(false)
   joinedAt    DateTime @default(now())
 
-  club        Club?     @relation(fields: [clubId], references: [id])
+  club        Club?     @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@map("Members")
   Participant Participant[]
   SessionParticipant SessionParticipant[]
+  sessionQueue sessionQueue[]
 }
 
 enum Gender {
@@ -99,9 +100,9 @@ model Match{
   sessionId   String?   @db.ObjectId
   updatedAt   DateTime @updatedAt
 
-  club        Club?     @relation(fields: [clubId], references: [id])
-  court       Court?    @relation(fields: [courtId], references: [id])
-  session     Session?  @relation(fields: [sessionId], references: [id])
+  club        Club?     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  court       Court?    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  session     Session?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("QuickMatches")
   Participant Participant[]
@@ -117,12 +118,13 @@ model Session {
   isActive    Boolean @default(true)
   updatedAt   DateTime @updatedAt
 
-  club        Club     @relation(fields: [clubId], references: [id])
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@map("ScheduledMatches")
   Match Match[]
   SessionParticipant SessionParticipant[]
   SessionCourt SessionCourt[]
+  sessionQueue sessionQueue[]
 }
 
 enum type {
@@ -134,12 +136,13 @@ model Participant{
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   memberId    String   @db.ObjectId
   matchId     String   @db.ObjectId
+  points      Int @default(0)
   isWon       Boolean @default(false)
   joinedAt    DateTime @default(now())
   status      UserStatus @default(ACTIVE)
 
-  match       Match    @relation(fields: [matchId], references: [id])
-  member      Member   @relation(fields: [memberId], references: [id])
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("Participants")
 }
@@ -150,8 +153,8 @@ model SessionParticipant {
   sessionId   String   @db.ObjectId
   status      UserStatus @default(ACTIVE)
 
-  session     Session  @relation(fields: [sessionId], references: [id])
-  member      Member   @relation(fields: [memberId], references: [id])
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("SessionParticipants")
 }
@@ -162,8 +165,8 @@ model SessionCourt{
   courtId     String   @db.ObjectId
   isBooked    Boolean @default(false)
 
-  session     Session  @relation(fields: [sessionId], references: [id])
-  court       Court    @relation(fields: [courtId], references: [id])
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  court       Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
 
   @@map("SessionCourts")
 }
@@ -192,4 +195,17 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   BLOCKED
+}
+
+model sessionQueue {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId   String   @db.ObjectId
+  memberId    String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("SessionQueue")
 }
