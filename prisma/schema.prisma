@@ -74,7 +74,7 @@ model Member{
   @@map("Members")
   Participant MatchParticipant[]
   SessionParticipant SessionParticipant[]
-  sessionQueue sessionQueue[]
+  SessionQueueParticipant SessionQueueParticipant[]
 }
 
 enum Gender {
@@ -92,7 +92,7 @@ enum Level {
 model Match{
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   clubId      String?   @db.ObjectId
-  courtId     String?   @db.ObjectId
+  courtId     String   @db.ObjectId
   createdAt   DateTime @default(now())
   startTime   DateTime
   endTime     DateTime
@@ -127,7 +127,7 @@ model Session {
   Match Match[]
   SessionParticipant SessionParticipant[]
   SessionCourt SessionCourt[]
-  sessionQueue sessionQueue[]
+  sessionQueue SessionQueue[]
 }
 
 enum Type {
@@ -205,15 +205,27 @@ enum UserStatus {
   BLOCKED
 }
 
-model sessionQueue {
+model SessionQueue {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionId   String   @db.ObjectId
-  memberId    String   @db.ObjectId
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("SessionQueue")
+  SessionQueueParticipant SessionQueueParticipant[]
+}
+
+model SessionQueueParticipant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionQueueId   String   @db.ObjectId
+  memberId    String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessionQueue SessionQueue @relation(fields: [sessionQueueId], references: [id], onDelete: Cascade)
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("SessionQueueParticipants")
 }
