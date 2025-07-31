@@ -11,6 +11,13 @@ router.get(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   MatchControllers.getAllMatchs
 )
+
+router.get(
+  "/my-club",
+  auth(UserRole.CLUB_OWNER),
+  MatchControllers.getMyClubMatches
+)
+
 router.get("/:id", auth(), MatchControllers.getSingleMatch)
 router.patch("/:id", auth(UserRole.CLUB_OWNER), MatchControllers.updateMatch)
 router.delete("/:id", auth(UserRole.CLUB_OWNER), MatchControllers.deleteMatch)

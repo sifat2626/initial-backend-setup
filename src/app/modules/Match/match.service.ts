@@ -34,7 +34,7 @@ const createMatch = async (payload: Match) => {
 }
 
 const getAllMatchs = async (query: any) => {
-  const { page = 1, limit = 10, clubId, courtId } = query
+  const { page = 1, limit = 10, clubId, courtId, isActive } = query
 
   const skip = (Number(page) - 1) * Number(limit)
   const take = Number(limit)
@@ -47,6 +47,14 @@ const getAllMatchs = async (query: any) => {
 
   if (courtId) {
     whereConditions.courtId = courtId
+  }
+
+  if (isActive === "true" || isActive) {
+    whereConditions.isActive = true
+  }
+
+  if (isActive === "false" || isActive === false) {
+    whereConditions.isActive = false
   }
 
   const totalCount = await prisma.match.count({
@@ -124,13 +132,72 @@ const deleteMatch = async (id: string) => {
     throw new ApiError(400, "Match not found")
   }
 
-  await prisma.match.delete({
+  await prisma.match.update({
     where: {
       id,
+    },
+    data: {
+      isActive: false,
     },
   })
 
   return match
+}
+
+const getMyClubMatches = async (query: any) => {
+  const { page = 1, limit = 10, courtId, clubId, sessionId, isActive } = query
+
+  const skip = (Number(page) - 1) * Number(limit)
+  const take = Number(limit)
+
+  const whereConditions: any = {
+    clubId,
+  }
+
+  if (courtId) {
+    whereConditions.courtId = courtId
+  }
+
+  if (sessionId) {
+    whereConditions.sessionId = sessionId
+  }
+
+  if (isActive === "true" || isActive) {
+    whereConditions.isActive = true
+  }
+
+  if (isActive === "false" || isActive === false) {
+    whereConditions.isActive = false
+  }
+
+  const totalCount = await prisma.match.count({
+    where: whereConditions,
+  })
+
+  const matchs = await prisma.match.findMany({
+    where: whereConditions,
+    skip,
+    take,
+    include: {
+      court: true,
+      club: true,
+      Participant: {
+        include: {
+          member: true,
+        },
+      },
+    },
+  })
+
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalCount,
+      totalPages: Math.ceil(totalCount / Number(limit)),
+    },
+    data: matchs,
+  }
 }
 
 export const MatchServices = {
@@ -139,4 +206,5 @@ export const MatchServices = {
   getSingleMatch,
   updateMatch,
   deleteMatch,
+  getMyClubMatches,
 }

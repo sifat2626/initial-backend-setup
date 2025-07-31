@@ -69,10 +69,36 @@ const deleteMatch = catchAsync(async (req, res) => {
   })
 })
 
+const getMyClubMatches = catchAsync(async (req, res) => {
+  const ownerId = req.user.id
+
+  const club = await prisma.club.findUnique({
+    where: {
+      ownerId,
+    },
+  })
+
+  if (!club) {
+    throw new ApiError(400, "Club not found for the owner")
+  }
+
+  const matches = await MatchServices.getMyClubMatches({
+    ...req.query,
+    clubId: club.id,
+  })
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Club matches retrieved successfully",
+    data: matches,
+  })
+})
+
 export const MatchControllers = {
   createMatch,
   getAllMatchs,
   getSingleMatch,
   updateMatch,
   deleteMatch,
+  getMyClubMatches,
 }
