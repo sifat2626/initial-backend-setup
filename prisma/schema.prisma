@@ -97,7 +97,7 @@ model Match{
   startTime   DateTime
   endTime     DateTime
   matchType        MatchType @default(QUICK)
-  type       type @default(DOUBLES)
+  type       Type @default(DOUBLES)
   isActive    Boolean @default(true)
   sessionId   String?   @db.ObjectId
   updatedAt   DateTime @updatedAt
@@ -117,7 +117,7 @@ model Session {
   createdAt   DateTime @default(now())
   startTime   DateTime
   endTime     DateTime
-  type        type @default(DOUBLES)
+  type        Type @default(DOUBLES)
   isActive    Boolean @default(true)
   updatedAt   DateTime @updatedAt
 
@@ -130,7 +130,7 @@ model Session {
   sessionQueue sessionQueue[]
 }
 
-enum type {
+enum Type {
   SINGLE
   DOUBLES
 }
@@ -140,6 +140,7 @@ model MatchParticipant{
   memberId    String   @db.ObjectId
   matchId     String   @db.ObjectId
   points      Int @default(0)
+  teamName    TeamName
   isWon       Boolean @default(false)
   joinedAt    DateTime @default(now())
 
@@ -147,6 +148,11 @@ model MatchParticipant{
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("Participants")
+}
+
+enum TeamName{
+  TEAM_A
+  TEAM_B
 }
 
 model SessionParticipant {

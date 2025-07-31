@@ -1,4 +1,4 @@
-import { Match } from "@prisma/client"
+import { Match, TeamName } from "@prisma/client"
 import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
@@ -200,6 +200,80 @@ const getMyClubMatches = async (query: any) => {
   }
 }
 
+const finishMatch = async (
+  matchId: string,
+  winnerTeamName: TeamName,
+  teamAPoints: number,
+  teamBPoints: number
+) => {
+  if (!matchId) {
+    throw new ApiError(400, "Match ID is required to finish a match")
+  }
+  if (!winnerTeamName) {
+    throw new ApiError(400, "Winner team name is required to finish a match")
+  }
+
+  const match = await prisma.match.findUnique({
+    where: {
+      id: matchId,
+    },
+  })
+
+  if (!match) {
+    throw new ApiError(400, "Match not found")
+  }
+
+  let winnerTeam: TeamName
+
+  if (teamAPoints > teamBPoints) {
+    winnerTeam = TeamName.TEAM_A
+  } else if (teamBPoints > teamAPoints) {
+    winnerTeam = TeamName.TEAM_B
+  } else {
+    throw new ApiError(400, "Match cannot be finished with equal points")
+  }
+
+  await prisma.$transaction(async (prisma) => {
+    const winnerTeamParticipants = await prisma.matchParticipant.updateMany({
+      where: {
+        matchId: matchId,
+        teamName: winnerTeam,
+      },
+      data: {
+        isWon: true,
+        points: winnerTeam === TeamName.TEAM_A ? teamAPoints : teamBPoints,
+      },
+    })
+
+    const loserTeamParticipants = await prisma.matchParticipant.updateMany({
+      where: {
+        matchId: matchId,
+        teamName: winnerTeam,
+      },
+      data: {
+        isWon: false,
+        points: winnerTeam === TeamName.TEAM_A ? teamBPoints : teamAPoints,
+      },
+    })
+  })
+
+  const updatedMatch = await prisma.match.update({
+    where: {
+      id: matchId,
+    },
+    data: {
+      isActive: false,
+    },
+  })
+
+  return {
+    match: updatedMatch,
+    winnerTeam,
+    teamAPoints,
+    teamBPoints,
+  }
+}
+
 export const MatchServices = {
   createMatch,
   getAllMatchs,
@@ -207,4 +281,5 @@ export const MatchServices = {
   updateMatch,
   deleteMatch,
   getMyClubMatches,
+  finishMatch,
 }

@@ -94,6 +94,22 @@ const getMyClubMatches = catchAsync(async (req, res) => {
   })
 })
 
+const finishMatch = catchAsync(async (req, res) => {
+  const { matchId, winnerTeamName, teamAPoints, teamBPoints } = req.body
+  const match = await MatchServices.finishMatch(
+    matchId,
+    winnerTeamName,
+    teamAPoints,
+    teamBPoints
+  )
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Match finished successfully",
+    data: match,
+  })
+})
+
 export const MatchControllers = {
   createMatch,
   getAllMatchs,
@@ -101,4 +117,5 @@ export const MatchControllers = {
   updateMatch,
   deleteMatch,
   getMyClubMatches,
+  finishMatch,
 }
