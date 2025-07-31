@@ -95,7 +95,8 @@ const getMyClubMatches = catchAsync(async (req, res) => {
 })
 
 const finishMatch = catchAsync(async (req, res) => {
-  const { matchId, winnerTeamName, teamAPoints, teamBPoints } = req.body
+  const matchId = req.params.id
+  const { winnerTeamName, teamAPoints, teamBPoints } = req.body
   const match = await MatchServices.finishMatch(
     matchId,
     winnerTeamName,

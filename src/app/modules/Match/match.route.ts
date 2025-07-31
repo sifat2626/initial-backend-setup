@@ -22,4 +22,10 @@ router.get("/:id", auth(), MatchControllers.getSingleMatch)
 router.patch("/:id", auth(UserRole.CLUB_OWNER), MatchControllers.updateMatch)
 router.delete("/:id", auth(UserRole.CLUB_OWNER), MatchControllers.deleteMatch)
 
+router.post(
+  "/:id/finish",
+  auth(UserRole.CLUB_OWNER),
+  MatchControllers.finishMatch
+)
+
 export const MatchRoutes = router
