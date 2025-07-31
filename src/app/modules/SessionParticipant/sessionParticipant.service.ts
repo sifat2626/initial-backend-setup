@@ -78,6 +78,21 @@ const createSessionParticipant = async (payload: SessionParticipant) => {
       },
     })
 
+    const sessionQueue = await prisma.sessionQueue.findUnique({
+      where: {
+        sessionId: session.id,
+      },
+    })
+
+    if (sessionQueue) {
+      await prisma.sessionQueueParticipant.create({
+        data: {
+          sessionQueueId: sessionQueue.id,
+          memberId: member.id,
+        },
+      })
+    }
+
     return await prisma.sessionParticipant.create({
       data: payload,
     })
@@ -199,7 +214,7 @@ const deleteSessionParticipant = async (id: string) => {
   })
 
   if (existingMatch) {
-    const participant = await prisma.participant.findFirst({
+    const participant = await prisma.matchParticipant.findFirst({
       where: {
         matchId: sessionParticipant.sessionId,
         memberId: sessionParticipant.memberId,
