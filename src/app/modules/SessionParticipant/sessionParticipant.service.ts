@@ -2,103 +2,78 @@ import { SessionParticipant } from "@prisma/client"
 import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
-const createSessionParticipant = async (payload: SessionParticipant) => {
-  const { sessionId, memberId } = payload
+interface JoinSessionInput {
+  sessionId: string
+  memberId: string
+}
 
-  if (!sessionId) {
-    throw new ApiError(
-      400,
-      "Session ID is required to create a session participant"
-    )
-  }
+const createSessionParticipant = async ({
+  sessionId,
+  memberId,
+}: JoinSessionInput) => {
+  if (!sessionId) throw new ApiError(400, "Session ID is required")
+  if (!memberId) throw new ApiError(400, "Member ID is required")
 
-  if (!memberId) {
-    throw new ApiError(
-      400,
-      "Member ID is required to create a session participant"
-    )
-  }
-
+  // Fetch session and validate
   const session = await prisma.session.findUnique({
-    where: {
-      id: sessionId,
-    },
+    where: { id: sessionId },
   })
-
-  if (!session) {
-    throw new ApiError(400, "Session not found")
-  }
-
-  if (session.remainingParticipants <= 0) {
-    throw new ApiError(
-      400,
-      "No remaining participants available for this session"
-    )
-  }
-
-  if (session.isActive === false) {
-    throw new ApiError(400, "Session is not active")
-  }
-
-  if (session.endTime < new Date()) {
+  if (!session) throw new ApiError(404, "Session not found")
+  if (!session.isActive) throw new ApiError(400, "Session is not active")
+  if (session.remainingParticipants <= 0)
+    throw new ApiError(400, "Session is full")
+  if (session.endTime < new Date())
     throw new ApiError(400, "Session has already ended")
-  }
 
+  // Check member existence
   const member = await prisma.member.findUnique({
-    where: {
-      id: memberId,
-    },
+    where: { id: memberId },
   })
+  if (!member) throw new ApiError(404, "Member not found")
 
-  if (!member) {
-    throw new ApiError(400, "Member not found")
-  }
-
-  // Check if the member is already a participant in the session
-  const existingParticipant = await prisma.sessionParticipant.findFirst({
-    where: {
-      sessionId,
-      memberId,
-    },
+  // Check if already joined
+  const alreadyParticipant = await prisma.sessionParticipant.findFirst({
+    where: { sessionId, memberId },
   })
+  if (alreadyParticipant)
+    throw new ApiError(400, "Member already joined this session")
 
-  if (existingParticipant) {
-    throw new ApiError(400, "Member is already a participant in this session")
-  }
-
-  const sessionParticipant = await prisma.$transaction(async (prisma) => {
-    await prisma.session.update({
-      where: {
-        id: sessionId,
-      },
-      data: {
-        remainingParticipants: {
-          decrement: 1,
-        },
-      },
+  // Transactionally add participant and queue participant, decrement remainingParticipants
+  const participant = await prisma.$transaction(async (tx) => {
+    // Decrement remainingParticipants count
+    await tx.session.update({
+      where: { id: sessionId },
+      data: { remainingParticipants: { decrement: 1 } },
     })
 
-    const sessionQueue = await prisma.sessionQueue.findUnique({
-      where: {
-        sessionId: session.id,
-      },
+    // Create session participant
+    const newParticipant = await tx.sessionParticipant.create({
+      data: { sessionId, memberId, status: "ACTIVE" }, // Assuming default ACTIVE status
     })
 
-    if (sessionQueue) {
-      await prisma.sessionQueueParticipant.create({
-        data: {
-          sessionQueueId: sessionQueue.id,
-          memberId: member.id,
-        },
+    // Get or create sessionQueue
+    let sessionQueue = await tx.sessionQueue.findUnique({
+      where: { sessionId },
+    })
+
+    if (!sessionQueue) {
+      sessionQueue = await tx.sessionQueue.create({
+        data: { sessionId },
       })
     }
 
-    return await prisma.sessionParticipant.create({
-      data: payload,
+    // Add to sessionQueueParticipant
+    await tx.sessionQueueParticipant.create({
+      data: {
+        sessionQueueId: sessionQueue.id,
+        memberId,
+      },
     })
+
+    return newParticipant
   })
 
-  return sessionParticipant
+  return participant
 }
 
 const getAllSessionParticipants = async (query: any) => {

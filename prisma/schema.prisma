@@ -97,6 +97,7 @@ model Match{
   startTime   DateTime
   endTime     DateTime
   matchType        MatchType @default(QUICK)
+  genderType GenderType @default(MIXED)
   type       Type @default(DOUBLES)
   isActive    Boolean @default(true)
   sessionId   String?   @db.ObjectId
@@ -127,7 +128,8 @@ model Session {
   Match Match[]
   SessionParticipant SessionParticipant[]
   SessionCourt SessionCourt[]
-  sessionQueue SessionQueue[]
+  sessionQueue SessionQueue?
+  MatchPool MatchPool[]
 }
 
 enum Type {
@@ -228,4 +230,22 @@ model SessionQueueParticipant {
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("SessionQueueParticipants")
+}
+
+model MatchPool {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId   String   @db.ObjectId
+  genderType  GenderType @default(MIXED)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("MatchPools")
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+  MIXED
 }

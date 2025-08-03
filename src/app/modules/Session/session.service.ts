@@ -2,53 +2,73 @@ import { Session, Type } from "@prisma/client"
 import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
-const createSession = async (payload: Session) => {
-  const { startTime, endTime } = payload
-
-  if (!startTime || !endTime) {
-    throw new ApiError(
-      400,
-      "Start time and end time are required to create a session"
-    )
-  }
-
-  if (new Date(startTime) >= new Date(endTime)) {
-    throw new ApiError(400, "End time must be after start time")
-  }
-
-  if (new Date(startTime) < new Date()) {
-    throw new ApiError(400, "Start time must be in the future")
-  }
-  const existingSession = await prisma.session.findFirst({
-    where: {
-      startTime: {
-        lte: new Date(endTime),
-      },
-      endTime: {
-        gte: new Date(startTime),
-      },
-    },
-  })
-  if (existingSession) {
-    throw new ApiError(400, "Session overlaps with an existing session")
-  }
-
-  const session = await prisma.$transaction(async (prisma) => {
-    const session = await prisma.session.create({
-      data: payload,
-    })
-
-    const sessionQueue = await prisma.sessionQueue.create({
-      data: {
-        sessionId: session.id,
-      },
-    })
-
-    return session
-  })
-  return session
+interface CreateSessionInput {
+  clubId: string
+  startTime: Date | string
+  endTime: Date | string
+  type?: Type // SINGLE or DOUBLES, default DOUBLES
 }
 
+const createSession = async (input: CreateSessionInput) => {
+  const { clubId, startTime, endTime, type = Type.DOUBLES } = input
+
+  if (!clubId) {
+    throw new ApiError(400, "clubId is required")
+  }
+  if (!startTime || !endTime) {
+    throw new ApiError(400, "startTime and endTime are required")
+  }
+
+  const start = new Date(startTime)
+  const end = new Date(endTime)
+
+  if (start >= end) {
+    throw new ApiError(400, "endTime must be after startTime")
+  }
+
+  if (start < new Date()) {
+    throw new ApiError(400, "startTime must be in the future")
+  }
+
+  // Check overlapping sessions for the same club
+  const overlappingSession = await prisma.session.findFirst({
+    where: {
+      clubId,
+      AND: [
+        { startTime: { lte: end } },
+        { endTime: { gte: start } },
+        { isActive: true },
+      ],
+    },
+  })
+
+  if (overlappingSession) {
+    throw new ApiError(400, "Session overlaps with an existing active session")
+  }
+
+  // Use a transaction to create session and sessionQueue atomically
+  const session = await prisma.$transaction(async (tx) => {
+    const createdSession = await tx.session.create({
+      data: {
+        clubId,
+        startTime: start,
+        endTime: end,
+        type,
+        isActive: true,
+      },
+    })
+
+    await tx.sessionQueue.create({
+      data: {
+        sessionId: createdSession.id,
+      },
+    })
+
+    return createdSession
+  })
+
+  return session
+}
 const getAllSessions = async (query: any) => {
   const { page = 1, limit = 10, clubId } = query
 
