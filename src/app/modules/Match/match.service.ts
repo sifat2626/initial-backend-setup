@@ -3,7 +3,7 @@ import prisma from "../../../shared/prisma"
 import ApiError from "../../../errors/ApiErrors"
 
 const createMatch = async (payload: Match) => {
-  const { clubId, courtId } = payload
+  const { clubId, courtId, sessionId } = payload
 
   if (!clubId) {
     throw new ApiError(400, "Club ID is required to create a match")
@@ -27,9 +27,35 @@ const createMatch = async (payload: Match) => {
     throw new ApiError(400, "Court does not belong to the specified club")
   }
 
-  const match = await prisma.match.create({
-    data: payload,
+  const match = await prisma.$transaction(async (prisma) => {
+    if (sessionId) {
+      const session = await prisma.session.findUnique({
+        where: {
+          id: sessionId,
+        },
+      })
+
+      if (!session) {
+        throw new ApiError(400, "Session not found")
+      }
+
+      const sessionCourt = await prisma.sessionCourt.findUnique({
+        where: {
+          sessionId_courtId: {
+            sessionId: session.id,
+            courtId: courtId,
+          },
+        },
+      })
+    }
+
+    const match = await prisma.match.create({
+      data: payload,
+    })
+
+    return match
   })
+
   return match
 }
 
@@ -255,6 +281,20 @@ const finishMatch = async (
         points: winnerTeam === TeamName.TEAM_A ? teamBPoints : teamAPoints,
       },
     })
+
+    if (match.sessionId) {
+      await prisma.sessionCourt.update({
+        where: {
+          sessionId_courtId: {
+            sessionId: match.sessionId,
+            courtId: match.courtId,
+          },
+        },
+        data: {
+          isBooked: false,
+        },
+      })
+    }
   })
 
   const updatedMatch = await prisma.match.update({

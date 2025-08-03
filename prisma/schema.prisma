@@ -181,6 +181,7 @@ model SessionCourt{
   court       Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
 
   @@map("SessionCourts")
+  @@unique([sessionId, courtId])
 }
 
 model Subscription {
