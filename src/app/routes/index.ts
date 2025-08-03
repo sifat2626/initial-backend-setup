@@ -10,6 +10,7 @@ import { SessionParticipantRoutes } from "../modules/SessionParticipant/sessionP
 import { SessionCourtRoutes } from "../modules/SessionCourt/sessionCourt.route"
 import { MatchRoutes } from "../modules/Match/match.route"
 import { MatchParticipantRoutes } from "../modules/MatchParticipant/matchParticipant.route"
+import { MatchPoolRoutes } from "../modules/MatchPool/matchPool.route"
 
 const router = express.Router()
 
@@ -53,6 +54,10 @@ const moduleRoutes = [
   {
     path: "/match-participants",
     route: MatchParticipantRoutes,
+  },
+  {
+    path: "/match-pools",
+    route: MatchPoolRoutes,
   },
 ]
 

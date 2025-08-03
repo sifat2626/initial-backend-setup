@@ -95,18 +95,6 @@ const removeFromMatchPool = async (matchPoolParticipantId: string) => {
   return { message: "MatchPoolParticipant removed successfully" }
 }
 
-const getMatchPoolParticipants = async (matchPoolId: string) => {
-  const matchPool = await prisma.matchPool.findUnique({
-    where: { id: matchPoolId },
-    include: {
-      matchPoolParticipants: { include: { member: true } },
-    },
-  })
-  if (!matchPool) throw new ApiError(400, "MatchPool not found")
-
-  return matchPool.matchPoolParticipants
-}
-
 const generateMatchPool = async (sessionId: string, genderType: GenderType) => {
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
@@ -215,9 +203,57 @@ const createBalancedMatch = async (
   }
 }
 
-export {
+const getAllMatchPools = async (query: any) => {
+  const { page = 1, limit = 10, sessionId } = query
+  const skip = (Number(page) - 1) * Number(limit)
+  const take = Number(limit)
+
+  const whereConditions: any = {}
+  if (sessionId) {
+    whereConditions.sessionId = sessionId
+  }
+  const totalCount = await prisma.matchPool.count({
+    where: whereConditions,
+  })
+  const matchPools = await prisma.matchPool.findMany({
+    skip,
+    take,
+    where: whereConditions,
+    include: {
+      matchPoolParticipants: {
+        include: { member: true },
+      },
+      session: true,
+    },
+  })
+  return {
+    meta: {
+      totalCount,
+      page,
+      limit,
+    },
+    data: matchPools,
+  }
+}
+
+const getMatchPoolById = async (id: string) => {
+  const matchPool = await prisma.matchPool.findUnique({
+    where: { id },
+    include: {
+      matchPoolParticipants: {
+        include: { member: true },
+      },
+      session: true,
+    },
+  })
+  if (!matchPool) throw new ApiError(400, "MatchPool not found")
+  return matchPool
+}
+
+export const MatchPoolServices = {
   addToMatchPool,
   removeFromMatchPool,
-  getMatchPoolParticipants,
+  getMatchPoolById,
+  getAllMatchPools,
   generateMatchPool,
 }
