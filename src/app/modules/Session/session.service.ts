@@ -131,6 +131,13 @@ const getMyClubSessions = async (query: any) => {
       Match: true,
       SessionCourt: true,
       SessionParticipant: true,
+      sessionQueue: {
+        include: {
+          SessionQueueParticipant: {
+            include: { member: true },
+          },
+        },
+      },
     },
   })
 
