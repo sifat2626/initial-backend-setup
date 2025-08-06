@@ -110,32 +110,85 @@ const generateMatchPool = async (sessionId: string, genderType: GenderType) => {
   const allParticipants = await prisma.sessionQueueParticipant.findMany({
     where: { sessionQueueId: sessionQueue.id },
     include: { member: true },
+    orderBy: { createdAt: "asc" }, // Ensures queue order
   })
-  if (!allParticipants)
-    throw new ApiError(400, "SessionQueueParticipants not found")
+  if (!allParticipants || allParticipants.length < 4)
+    throw new ApiError(400, "Not enough players to generate a match")
 
-  let participants: (SessionQueueParticipant & {
-    member: { level: keyof typeof POWER_MAP } | null
-  })[] = []
+  // Filter by gender type
+  let participants = allParticipants
   if (genderType === GenderType.MALE || genderType === GenderType.FEMALE) {
     participants = allParticipants.filter(
       (p) => p.member?.gender === genderType
     )
-  } else {
-    participants = allParticipants
   }
 
-  const matches: (SessionQueueParticipant & {
-    member: { level: keyof typeof POWER_MAP } | null
-  })[][] = []
-  while (participants.length >= 4) {
-    const group = participants.splice(0, 4)
-    matches.push(group)
+  // Take up to first 8 participants (or less if <8)
+  const scope = participants.slice(0, Math.min(8, participants.length))
+
+  if (scope.length < 4) {
+    throw new ApiError(400, "Not enough players to form a match")
   }
 
-  for (const match of matches) {
-    await createBalancedMatch(session.id, match)
+  // Generate all 4-player combinations within scope
+  const combos: Array<(typeof scope)[number][]> = []
+  for (let i = 0; i < scope.length; i++) {
+    for (let j = i + 1; j < scope.length; j++) {
+      for (let k = j + 1; k < scope.length; k++) {
+        for (let l = k + 1; l < scope.length; l++) {
+          combos.push([scope[i], scope[j], scope[k], scope[l]])
+        }
+      }
+    }
   }
+
+  if (combos.length === 0) {
+    throw new ApiError(400, "Unable to form a 4-player combination")
+  }
+
+  // Evaluate best power-balanced group
+  let bestGroup: typeof scope = []
+  let bestDiff = Infinity
+
+  for (const group of combos) {
+    const teamOptions = [
+      [
+        [0, 1],
+        [2, 3],
+      ],
+      [
+        [0, 2],
+        [1, 3],
+      ],
+      [
+        [0, 3],
+        [1, 2],
+      ],
+    ]
+
+    for (const [teamAIdx, teamBIdx] of teamOptions) {
+      const powerOf = (p: (typeof group)[0]) => {
+        const level = p.member?.level ?? "CASUAL"
+        return POWER_MAP[level]
+      }
+
+      const powerA = powerOf(group[teamAIdx[0]]) + powerOf(group[teamAIdx[1]])
+      const powerB = powerOf(group[teamBIdx[0]]) + powerOf(group[teamBIdx[1]])
+      const diff = Math.abs(powerA - powerB)
+
+      if (diff < bestDiff) {
+        bestDiff = diff
+        bestGroup = group
+      }
+    }
+  }
+
+  if (!bestGroup.length) {
+    throw new ApiError(400, "Could not form a balanced group")
+  }
+
+  // Create match with the best balanced group
+  await createBalancedMatch(session.id, bestGroup)
 }
 
 const createBalancedMatch = async (
