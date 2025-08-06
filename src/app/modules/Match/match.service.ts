@@ -306,28 +306,19 @@ const finishMatch = async (
       include: { member: true },
     })
 
-    const sessionQueue = await tx.sessionQueue.findUnique({
-      where: {
-        sessionId: match.sessionId!,
-      },
-    })
-
-    if (!sessionQueue) {
-      throw new ApiError(400, "SessionQueue not found")
-    }
-
     // Split participants into winners and losers
     const winners = participants.filter((p) => p.teamName === winningTeam)
     const losers = participants.filter((p) => p.teamName !== winningTeam)
 
     const toQueue = [...winners, ...losers]
 
-    for (const participant of toQueue) {
-      await tx.sessionQueueParticipant.create({
-        data: {
-          sessionQueueId: sessionQueue.id,
-          memberId: participant.memberId,
-        },
+    if (match.sessionId) {
+      // Re-queue participants
+      await tx.sessionParticipant.createMany({
+        data: toQueue.map((p) => ({
+          sessionId: match.sessionId!,
+          memberId: p.member.id,
+        })),
       })
     }
 

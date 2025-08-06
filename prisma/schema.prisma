@@ -74,7 +74,6 @@ model Member{
   @@map("Members")
   Participant MatchParticipant[]
   SessionParticipant SessionParticipant[]
-  SessionQueueParticipant SessionQueueParticipant[]
   MatchPoolParticipant MatchPoolParticipant[]
 }
 
@@ -130,7 +129,6 @@ model Session {
   Match Match[]
   SessionParticipant SessionParticipant[]
   SessionCourt SessionCourt[]
-  sessionQueue SessionQueue?
   MatchPool MatchPool[]
 }
 
@@ -169,6 +167,8 @@ model SessionParticipant {
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("SessionParticipants")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model SessionCourt{
@@ -210,30 +210,6 @@ enum UserStatus {
   BLOCKED
 }
 
-model SessionQueue {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  sessionId   String   @db.ObjectId @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@map("SessionQueue")
-  SessionQueueParticipant SessionQueueParticipant[]
-}
-
-model SessionQueueParticipant {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  sessionQueueId   String   @db.ObjectId
-  memberId    String   @db.ObjectId
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  sessionQueue SessionQueue @relation(fields: [sessionQueueId], references: [id], onDelete: Cascade)
-  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  @@map("SessionQueueParticipants")
-}
 
 model MatchPool {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId

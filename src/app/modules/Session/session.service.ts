@@ -58,12 +58,6 @@ const createSession = async (input: CreateSessionInput) => {
       },
     })
 
-    await tx.sessionQueue.create({
-      data: {
-        sessionId: createdSession.id,
-      },
-    })
-
     return createdSession
   })
 
@@ -116,6 +110,10 @@ const getMyClubSessions = async (query: any) => {
 
   const whereConditions: any = {
     clubId,
+    isActive: true,
+    endTime: {
+      gte: new Date(),
+    },
   }
 
   const totalCount = await prisma.session.count({
@@ -131,13 +129,6 @@ const getMyClubSessions = async (query: any) => {
       Match: true,
       SessionCourt: true,
       SessionParticipant: true,
-      sessionQueue: {
-        include: {
-          SessionQueueParticipant: {
-            include: { member: true },
-          },
-        },
-      },
     },
   })
 
@@ -205,161 +196,6 @@ const deleteSession = async (id: string) => {
 
   return session
 }
-
-const generateMatchPool = async (sessionId: string) => {
-  const session = await prisma.session.findUnique({
-    where: {
-      id: sessionId,
-    },
-    include: {
-      SessionParticipant: {
-        include: {
-          member: true,
-        },
-      },
-      SessionCourt: {
-        include: {
-          court: true,
-        },
-      },
-    },
-  })
-
-  if (!session) {
-    throw new ApiError(400, "Session not found")
-  }
-
-  const power = {
-    MALE: 1,
-    FEMALE: 0.8,
-    CASUAL: 3,
-    BEGINNER: 5,
-    INTERMEDIATE: 7,
-    ADVANCED: 10,
-  }
-
-  if (session.type === Type.SINGLE) {
-    if (session.SessionParticipant.length < 2) {
-      throw new ApiError(400, "Not enough participants to generate a match")
-    }
-
-    const participants = session.SessionParticipant.map((participant) => ({
-      memberId: participant.memberId,
-      power: power[participant.member.gender] * power[participant.member.level],
-    }))
-
-    participants.sort((a, b) => b.power - a.power)
-
-    const top2 = participants.slice(0, 2)
-
-    const teamA = top2[0]
-    const teamB = top2[1]
-
-    const sessionQueue = await prisma.sessionQueue.findUnique({
-      where: {
-        sessionId: session.id,
-      },
-      include: {
-        SessionQueueParticipant: {
-          include: {
-            member: true,
-          },
-        },
-      },
-    })
-
-    if (!sessionQueue) {
-      throw new ApiError(400, "Session queue not found")
-    }
-
-    await prisma.sessionQueueParticipant.deleteMany({
-      where: {
-        memberId: {
-          in: sessionQueue.SessionQueueParticipant.map((p) => p.memberId),
-        },
-      },
-    })
-
-    return {
-      teamA: {
-        memberId: teamA.memberId,
-        power: teamA.power,
-      },
-      teamB: {
-        memberId: teamB.memberId,
-        power: teamB.power,
-      },
-    }
-  }
-
-  if (session.type === Type.DOUBLES) {
-    if (session.SessionParticipant.length < 4) {
-      throw new ApiError(400, "Not enough participants to generate a match")
-    }
-
-    const participants = session.SessionParticipant.map((participant) => ({
-      memberId: participant.memberId,
-      power: power[participant.member.gender] * power[participant.member.level],
-    }))
-
-    participants.sort((a, b) => b.power - a.power)
-
-    const top4 = participants.slice(0, 4)
-
-    const teamA = {
-      member1: top4[0],
-      member2: top4[3],
-    }
-    const teamB = {
-      member1: top4[1],
-      member2: top4[2],
-    }
-
-    const sessionQueue = await prisma.sessionQueue.findUnique({
-      where: {
-        sessionId: session.id,
-      },
-      include: {
-        SessionQueueParticipant: {
-          include: {
-            member: true,
-          },
-        },
-      },
-    })
-
-    if (!sessionQueue) {
-      throw new ApiError(400, "Session queue not found")
-    }
-
-    await prisma.sessionQueueParticipant.deleteMany({
-      where: {
-        memberId: {
-          in: sessionQueue.SessionQueueParticipant.map((p) => p.memberId),
-        },
-      },
-    })
-
-    return {
-      teamA: {
-        member1: teamA.member1.memberId,
-        member2: teamA.member2.memberId,
-        power: teamA.member1.power + teamA.member2.power,
-      },
-      teamB: {
-        member1: teamB.member1.memberId,
-        member2: teamB.member2.memberId,
-        power: teamB.member1.power + teamB.member2.power,
-      },
-    }
-  }
-}
-
-const addToMatchPool = async (sessionId: string, memberId: string) => {}
-
-const removeFromMatchPool = async (sessionId: string, memberId: string) => {}
-
-const generateSessionMatch = async (sessionId: string) => {}
 
 export const SessionServices = {
   createSession,

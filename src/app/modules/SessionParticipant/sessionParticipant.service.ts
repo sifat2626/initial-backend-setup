@@ -51,21 +51,10 @@ const createSessionParticipant = async ({
       data: { sessionId, memberId, status: "ACTIVE" }, // Assuming default ACTIVE status
     })
 
-    // Get or create sessionQueue
-    let sessionQueue = await tx.sessionQueue.findUnique({
-      where: { sessionId },
-    })
-
-    if (!sessionQueue) {
-      sessionQueue = await tx.sessionQueue.create({
-        data: { sessionId },
-      })
-    }
-
     // Add to sessionQueueParticipant
-    await tx.sessionQueueParticipant.create({
+    await tx.sessionParticipant.create({
       data: {
-        sessionQueueId: sessionQueue.id,
+        sessionId,
         memberId,
       },
     })

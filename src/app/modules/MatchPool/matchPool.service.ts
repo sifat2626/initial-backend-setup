@@ -1,4 +1,4 @@
-import { GenderType, SessionQueueParticipant, TeamName } from "@prisma/client"
+import { GenderType, SessionParticipant, TeamName } from "@prisma/client"
 import ApiError from "../../../errors/ApiErrors"
 import prisma from "../../../shared/prisma"
 
@@ -37,22 +37,6 @@ const addToMatchPool = async (
     throw new ApiError(400, "Participants already exist in match pool")
   }
 
-  const sessionQueue = await prisma.sessionQueue.findUnique({
-    where: { sessionId: matchPool.sessionId },
-  })
-  if (!sessionQueue) throw new ApiError(400, "SessionQueue not found")
-
-  const sessionQueueParticipant =
-    await prisma.sessionQueueParticipant.findFirst({
-      where: {
-        sessionQueueId: sessionQueue.id,
-        memberId: sessionParticipant.memberId,
-      },
-    })
-  if (!sessionQueueParticipant) {
-    throw new ApiError(400, "SessionQueueParticipant not found")
-  }
-
   const matchPoolParticipant = await prisma.$transaction(async (prisma) => {
     const created = await prisma.matchPoolParticipant.create({
       data: {
@@ -63,8 +47,8 @@ const addToMatchPool = async (
       include: { member: true, matchPool: true },
     })
 
-    await prisma.sessionQueueParticipant.delete({
-      where: { id: sessionQueueParticipant.id },
+    await prisma.sessionParticipant.delete({
+      where: { id: sessionParticipant.id },
     })
 
     return created
@@ -85,10 +69,10 @@ const removeFromMatchPool = async (matchPoolParticipantId: string) => {
     where: { id: matchPoolParticipantId },
   })
 
-  await prisma.sessionQueueParticipant.create({
+  await prisma.sessionParticipant.create({
     data: {
-      sessionQueueId: matchPoolParticipant.matchPool.sessionId,
       memberId: matchPoolParticipant.memberId,
+      sessionId: matchPoolParticipant.matchPool.sessionId!,
     },
   })
 
@@ -102,13 +86,8 @@ const generateMatchPool = async (sessionId: string, genderType: GenderType) => {
   })
   if (!session) throw new ApiError(400, "Session not found")
 
-  const sessionQueue = await prisma.sessionQueue.findUnique({
+  const allParticipants = await prisma.sessionParticipant.findMany({
     where: { sessionId: session.id },
-  })
-  if (!sessionQueue) throw new ApiError(400, "SessionQueue not found")
-
-  const allParticipants = await prisma.sessionQueueParticipant.findMany({
-    where: { sessionQueueId: sessionQueue.id },
     include: { member: true },
     orderBy: { createdAt: "asc" }, // Ensures queue order
   })
@@ -193,14 +172,14 @@ const generateMatchPool = async (sessionId: string, genderType: GenderType) => {
 
 const createBalancedMatch = async (
   sessionId: string,
-  participants: (SessionQueueParticipant & {
+  participants: (SessionParticipant & {
     member: { level: keyof typeof POWER_MAP } | null
   })[]
 ) => {
   if (participants.length !== 4) return
 
   const powerOf = (
-    p: SessionQueueParticipant & {
+    p: SessionParticipant & {
       member: { level: keyof typeof POWER_MAP } | null
     }
   ) => {
