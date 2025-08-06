@@ -235,6 +235,7 @@ const finishMatch = async (
   if (!matchId) {
     throw new ApiError(400, "Match ID is required to finish a match")
   }
+
   if (!winnerTeamName) {
     throw new ApiError(400, "Winner team name is required to finish a match")
   }
@@ -249,41 +250,44 @@ const finishMatch = async (
     throw new ApiError(400, "Match not found")
   }
 
-  let winnerTeam: TeamName
-
+  let winningTeam: TeamName
   if (teamAPoints > teamBPoints) {
-    winnerTeam = TeamName.TEAM_A
+    winningTeam = TeamName.TEAM_A
   } else if (teamBPoints > teamAPoints) {
-    winnerTeam = TeamName.TEAM_B
+    winningTeam = TeamName.TEAM_B
   } else {
     throw new ApiError(400, "Match cannot be finished with equal points")
   }
 
-  await prisma.$transaction(async (prisma) => {
-    const winnerTeamParticipants = await prisma.matchParticipant.updateMany({
+  await prisma.$transaction(async (tx) => {
+    // Update match participants
+    await tx.matchParticipant.updateMany({
       where: {
-        matchId: matchId,
-        teamName: winnerTeam,
+        matchId,
+        teamName: winningTeam,
       },
       data: {
         isWon: true,
-        points: winnerTeam === TeamName.TEAM_A ? teamAPoints : teamBPoints,
+        points: winningTeam === TeamName.TEAM_A ? teamAPoints : teamBPoints,
       },
     })
 
-    const loserTeamParticipants = await prisma.matchParticipant.updateMany({
+    await tx.matchParticipant.updateMany({
       where: {
-        matchId: matchId,
-        teamName: winnerTeam,
+        matchId,
+        teamName: {
+          not: winningTeam,
+        },
       },
       data: {
         isWon: false,
-        points: winnerTeam === TeamName.TEAM_A ? teamBPoints : teamAPoints,
+        points: winningTeam === TeamName.TEAM_A ? teamBPoints : teamAPoints,
       },
     })
 
-    if (match.sessionId) {
-      await prisma.sessionCourt.update({
+    // Release court
+    if (match.sessionId && match.courtId) {
+      await tx.sessionCourt.update({
         where: {
           sessionId_courtId: {
             sessionId: match.sessionId,
@@ -295,20 +299,50 @@ const finishMatch = async (
         },
       })
     }
-  })
 
-  const updatedMatch = await prisma.match.update({
-    where: {
-      id: matchId,
-    },
-    data: {
-      isActive: false,
-    },
+    // Fetch match participants with member IDs
+    const participants = await tx.matchParticipant.findMany({
+      where: { matchId },
+      include: { member: true },
+    })
+
+    const sessionQueue = await tx.sessionQueue.findUnique({
+      where: {
+        sessionId: match.sessionId!,
+      },
+    })
+
+    if (!sessionQueue) {
+      throw new ApiError(400, "SessionQueue not found")
+    }
+
+    // Split participants into winners and losers
+    const winners = participants.filter((p) => p.teamName === winningTeam)
+    const losers = participants.filter((p) => p.teamName !== winningTeam)
+
+    const toQueue = [...winners, ...losers]
+
+    for (const participant of toQueue) {
+      await tx.sessionQueueParticipant.create({
+        data: {
+          sessionQueueId: sessionQueue.id,
+          memberId: participant.memberId,
+        },
+      })
+    }
+
+    // Mark match inactive
+    await tx.match.update({
+      where: { id: matchId },
+      data: {
+        isActive: false,
+      },
+    })
   })
 
   return {
-    match: updatedMatch,
-    winnerTeam,
+    message: "Match finished and players re-queued successfully",
+    winnerTeam: winningTeam,
     teamAPoints,
     teamBPoints,
   }
