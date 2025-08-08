@@ -14,6 +14,8 @@ model User {
   phoneNumber  String?
   profileImage String?
   password     String
+
+  customerId   String?   @unique
   role         UserRole   @default(CLUB_OWNER)
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now())
